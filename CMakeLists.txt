@@ -190,15 +190,6 @@ set(LIBHDRS
 #    libs/wx/include/wx/jsonwriter.h
 	)
 
-		
-IF(WIN32)
-SET(SRC_TINYXML
-            src/tinyxml/tinyxml.cpp
-            src/tinyxml/tinyxmlparser.cpp
-            src/tinyxml/tinyxmlerror.cpp
-)
-ENDIF(WIN32)
-
 set(EXTINCLUDE extinclude/nlohmann/json.hpp extinclude/ODAPI.h)
 
 set(LIBSSRC libs/wxJSON/src/jsonreader.cpp libs/wxJSON/src/jsonval.cpp libs/wxJSON/src/jsonwriter.cpp)
@@ -220,6 +211,27 @@ else(PI_JSON_SCHEMA_VALIDATOR)
     message(STATUS "${CMLOC}Not using JSON Schema validation - warning invalid JSON 'may' cause unexpected crashes")
 endif(PI_JSON_SCHEMA_VALIDATOR)
 
+if (UNIX)
+  if (NOT APPLE)
+    find_package(TinyXML)
+  endif (NOT APPLE)
+endif (UNIX)
+
+if (TINYXML_FOUND)
+  include_directories(BEFORE ${TINYXML_INCLUDE_DIR})
+  set(SRC_TINYXML ${TINYXML_LIBRARIES})
+  message(STATUS "Building with system tinyxml")
+else (TINYXML_FOUND)
+  include_directories(BEFORE ${PROJECT_SOURCE_DIR}/src/tinyxml)
+  SET(SRC_TINYXML
+            src/tinyxml/tinyxml.cpp
+            src/tinyxml/tinyxmlparser.cpp
+            src/tinyxml/tinyxmlerror.cpp
+  )
+  message(STATUS "Building with bundled tinyxml")
+endif (TINYXML_FOUND)
+ADD_DEFINITIONS(-DTIXML_USE_STL)
+
 ##
 # Modify/configure 'Include' Directories below for the Plugin
 ##
@@ -236,7 +248,6 @@ include_directories(BEFORE ${PROJECT_SOURCE_DIR}/extinclude)
 include_directories(BEFORE ${PROJECT_SOURCE_DIR}/src)  #nor so sure this is needed, trying to fix cnav.
 include_directories(BEFORE ${PROJECT_SOURCE_DIR}/src/astrolabe)
 include_directories(BEFORE ${PROJECT_SOURCE_DIR}/src/geomag)
-include_directories(BEFORE ${PROJECT_SOURCE_DIR}/src/tinyxml)
 include_directories(BEFORE ${PROJECT_SOURCE_DIR}/api-16)
 include_directories(BEFORE ${PROJECT_SOURCE_DIR}/libs)
 include_directories(BEFORE ${PROJECT_SOURCE_DIR}/libs/GL)
@@ -251,7 +262,6 @@ include_directories(BEFORE ${PROJECT_SOURCE_DIR}/libs/GL)
 ADD_LIBRARY(${PACKAGE_NAME} SHARED ${SRCS} ${HDRS} ${LIBHDRS} ${SRC_TINYXML})
 ##==================================
 
-ADD_DEFINITIONS(-DTIXML_USE_STL)
 
 # Every plugin that uses JSON for passing messages should use a validator. The validator  allows the system to ignore non-conformant messages. 
 
